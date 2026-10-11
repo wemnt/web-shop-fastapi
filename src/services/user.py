@@ -15,6 +15,7 @@ from services.exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from services.token import revoke_all_user_tokens
 
 
 async def create_user(session: AsyncSession, data: UserCreate) -> User:
@@ -69,6 +70,7 @@ async def update_user(session: AsyncSession, user_id: UUID, data: UserUpdate) ->
 async def delete_user(session: AsyncSession, user_id: UUID) -> None:
     user = await get_user(session, user_id)
     user.deleted_at = datetime.now(tz=UTC)
+    await revoke_all_user_tokens(session, user.id)
     await session.commit()
 
 
@@ -82,6 +84,7 @@ async def update_password(
     if not is_valid:
         raise IncorrectPasswordError("Incorrect password")
     user.hashed_password = await run_in_threadpool(hash_password, data.new_password)
+    await revoke_all_user_tokens(session, user.id)
     await session.commit()
 
 

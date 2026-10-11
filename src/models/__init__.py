@@ -5,4 +5,4 @@ from models.product import Product
 from models.refresh_token import RefreshToken
 from models.user import User
 
-__all__ = ["Base", "Product", "User", "RefreshToken"]
+__all__ = ["Base", "Product", "RefreshToken", "User"]

@@ -2,9 +2,14 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import DUMMY_HASH, verify_password
+from core.security import (
+    DUMMY_HASH,
+    verify_password,
+)
 from models.user import User
-from services.exceptions import InvalidCredentialsError
+from services.exceptions import (
+    InvalidCredentialsError,
+)
 
 
 async def authenticate_user(session: AsyncSession, email: str, password: str) -> User:

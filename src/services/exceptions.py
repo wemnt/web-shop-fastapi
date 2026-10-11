@@ -52,3 +52,7 @@ class InsufficientRoleError(ForbiddenError):
 
 class CannotChangeOwnRoleError(BadRequestError):
     pass
+
+
+class InvalidRefreshTokenError(UnauthorizedError):
+    pass

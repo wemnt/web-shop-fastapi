@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -39,3 +41,11 @@ def decode_access_token(token: str) -> UUID:
         return UUID(payload["sub"])
     except (jwt.InvalidTokenError, KeyError, ValueError) as e:
         raise AuthTokenError("Invalid token") from e
+
+
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

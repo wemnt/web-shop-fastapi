@@ -39,7 +39,7 @@ def error_response(
     )
 
 
-async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     message = str(exc)
     headers = None
@@ -56,7 +56,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 
 
 async def validation_error_handler(
-    request: Request, exc: RequestValidationError
+    _request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     errors: list[FieldError] = []
     for err in exc.errors():
@@ -68,7 +68,7 @@ async def validation_error_handler(
     )
 
 
-async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+async def unhandled_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled exception: %r", exc)
     return error_response(
         status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
