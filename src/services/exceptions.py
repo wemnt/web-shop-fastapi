@@ -56,3 +56,11 @@ class CannotChangeOwnRoleError(BadRequestError):
 
 class InvalidRefreshTokenError(UnauthorizedError):
     pass
+
+
+class CartQuantityLimitError(BadRequestError):
+    pass
+
+
+class CartItemNotFoundError(NotFoundError):
+    pass
