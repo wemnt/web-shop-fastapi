@@ -18,6 +18,10 @@ class UnauthorizedError(AppError):
     pass
 
 
+class ConflictError(AppError):
+    pass
+
+
 class UserAlreadyExistsError(AlreadyExistsError):
     pass
 
@@ -63,4 +67,16 @@ class CartQuantityLimitError(BadRequestError):
 
 
 class CartItemNotFoundError(NotFoundError):
+    pass
+
+
+class EmptyCartError(BadRequestError):
+    pass
+
+
+class InsufficientStockError(ConflictError):
+    pass
+
+
+class OrderNotFoundError(NotFoundError):
     pass

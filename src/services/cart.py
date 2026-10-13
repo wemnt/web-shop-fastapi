@@ -99,6 +99,11 @@ async def remove_item(session: AsyncSession, user_id: UUID, product_id: UUID) ->
     await session.commit()
 
 
-async def clear_cart(session: AsyncSession, user_id: UUID) -> None:
+async def delete_cart_items(session: AsyncSession, user_id: UUID) -> None:
+    """Delete all items from the user's cart without committing."""
     _ = await session.execute(delete(CartItem).where(CartItem.user_id == user_id))
+
+
+async def clear_cart(session: AsyncSession, user_id: UUID) -> None:
+    await delete_cart_items(session, user_id)
     await session.commit()

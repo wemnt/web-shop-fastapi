@@ -11,6 +11,7 @@ from services.exceptions import (
     AlreadyExistsError,
     AppError,
     BadRequestError,
+    ConflictError,
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
@@ -19,6 +20,7 @@ from services.exceptions import (
 ERROR_STATUS: dict[type[AppError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     AlreadyExistsError: status.HTTP_409_CONFLICT,
+    ConflictError: status.HTTP_409_CONFLICT,
     BadRequestError: status.HTTP_400_BAD_REQUEST,
     UnauthorizedError: status.HTTP_401_UNAUTHORIZED,
     ForbiddenError: status.HTTP_403_FORBIDDEN,

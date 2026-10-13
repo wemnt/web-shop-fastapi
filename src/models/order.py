@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -11,9 +11,8 @@ from sqlalchemy import (
     Numeric,
     String,
     func,
-    true,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
 
@@ -47,6 +46,7 @@ class Order(Base):
         server_default=OrderStatus.CREATED.value,
     )
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    items: Mapped[list["OrderItem"]] = relationship(lazy="raise")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
