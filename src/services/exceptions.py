@@ -80,3 +80,7 @@ class InsufficientStockError(ConflictError):
 
 class OrderNotFoundError(NotFoundError):
     pass
+
+
+class InvalidStatusTransitionError(ConflictError):
+    pass
