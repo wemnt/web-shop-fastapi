@@ -7,4 +7,4 @@ from models.product import Product
 from models.refresh_token import RefreshToken
 from models.user import User
 
-__all__ = ["Base", "Product", "RefreshToken", "User", "CartItem", "OrderItem", "Order"]
+__all__ = ["Base", "CartItem", "Order", "OrderItem", "Product", "RefreshToken", "User"]

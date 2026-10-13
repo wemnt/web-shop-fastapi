@@ -2,5 +2,5 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    # Class Base конфликтует с типизацией SQLAlchemy
+    # SQLAlchemy's typing conflicts with ClassVar here
     __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012

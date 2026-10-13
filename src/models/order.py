@@ -46,7 +46,7 @@ class Order(Base):
         server_default=OrderStatus.CREATED.value,
     )
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2))
-    items: Mapped[list["OrderItem"]] = relationship(lazy="raise")
+    items: Mapped[list[OrderItem]] = relationship(lazy="raise")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
