@@ -13,6 +13,8 @@ from core.security import decode_access_token
 from db.session import SessionDep
 from models.user import User, UserRole
 from services.auth import AuthService
+from services.cart import CartService
+from services.order import OrderService
 from services.product import ProductService
 from services.token import TokenService
 from services.user import UserService
@@ -46,6 +48,20 @@ def get_auth_service(session: SessionDep) -> AuthService:
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_cart_service(session: SessionDep, products: ProductServiceDep) -> CartService:
+    return CartService(session, products)
+
+
+CartServiceDep = Annotated[CartService, Depends(get_cart_service)]
+
+
+def get_order_service(session: SessionDep, cart: CartServiceDep) -> OrderService:
+    return OrderService(session, cart)
+
+
+OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]
 
 
 async def get_current_user(
