@@ -3,10 +3,11 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
+from core.exceptions import AuthTokenError, InsufficientRoleError, UserNotFoundError
 from core.security import decode_access_token
 from db.session import SessionDep
 from models.user import User, UserRole
-from services.exceptions import AuthTokenError, InsufficientRoleError, UserNotFoundError
+from services.product import ProductService
 from services.user import get_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -32,6 +33,13 @@ def require_roles(*roles: UserRole):
         return user
 
     return dependency
+
+
+def get_product_service(session: SessionDep) -> ProductService:
+    return ProductService(session)
+
+
+ProductServiceDep = Annotated[ProductService, Depends(get_product_service)]
 
 
 require_admin = require_roles(UserRole.ADMIN)

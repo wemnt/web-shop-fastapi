@@ -1,19 +1,12 @@
+from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from api.deps import require_admin
-from db.session import SessionDep
+from api.deps import ProductServiceDep, require_admin
 from models.product import Product
 from schemas.product import ProductCreate, ProductRead, ProductUpdate
-from services.product import (
-    create_product,
-    delete_product,
-    get_product,
-    list_products,
-    update_product,
-)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -24,32 +17,35 @@ router = APIRouter(prefix="/products", tags=["products"])
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_admin)],
 )
-async def create_product_endpoint(data: ProductCreate, session: SessionDep) -> Product:
-    product = await create_product(data=data, session=session)
-    return product
+async def create_product_endpoint(
+    data: ProductCreate, products: ProductServiceDep
+) -> Product:
+    return await products.create(data=data)
 
 
 @router.get("/{product_id}", response_model=ProductRead)
-async def get_product_endpoint(product_id: UUID, session: SessionDep) -> Product:
-    return await get_product(product_id=product_id, session=session)
+async def get_product_endpoint(
+    product_id: UUID, products: ProductServiceDep
+) -> Product:
+    return await products.get(product_id=product_id)
 
 
 @router.get("", response_model=list[ProductRead])
 async def get_products(
-    session: SessionDep,
+    products: ProductServiceDep,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
     page: Annotated[int, Query(ge=0)] = 0,
-) -> list[Product]:
-    return await list_products(session, page=page, size=size)
+) -> Sequence[Product]:
+    return await products.list_products(page=page, size=size)
 
 
 @router.patch(
     "/{product_id}", response_model=ProductRead, dependencies=[Depends(require_admin)]
 )
 async def update_product_endpoint(
-    product_id: UUID, data: ProductUpdate, session: SessionDep
+    product_id: UUID, data: ProductUpdate, products: ProductServiceDep
 ) -> Product:
-    return await update_product(product_id=product_id, data=data, session=session)
+    return await products.update(product_id=product_id, data=data)
 
 
 @router.delete(
@@ -57,5 +53,7 @@ async def update_product_endpoint(
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(require_admin)],
 )
-async def delete_product_endpoint(product_id: UUID, session: SessionDep) -> None:
-    await delete_product(product_id=product_id, session=session)
+async def delete_product_endpoint(
+    product_id: UUID, products: ProductServiceDep
+) -> None:
+    await products.delete(product_id=product_id)
