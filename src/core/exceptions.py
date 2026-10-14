@@ -84,3 +84,7 @@ class AlreadyExistsError(ConflictError):
 
 class UserAlreadyExistsError(AlreadyExistsError):
     pass
+
+
+class InactiveUserError(ForbiddenError):
+    pass

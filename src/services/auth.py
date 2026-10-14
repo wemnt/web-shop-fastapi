@@ -13,20 +13,24 @@ from core.security import (
 from models.user import User
 
 
-async def authenticate_user(session: AsyncSession, email: str, password: str) -> User:
+class AuthService:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
 
-    query = select(User).where(
-        User.email == email,
-        User.is_active.is_(True),
-        User.deleted_at.is_(None),
-    )
+    async def authenticate(self, email: str, password: str) -> User:
 
-    user = await session.scalar(query)
-    if user is None:
-        await to_thread(verify_password, password, DUMMY_HASH)
-        raise InvalidCredentialsError("Invalid email or password")
+        query = select(User).where(
+            User.email == email.lower(),
+            User.is_active.is_(True),
+            User.deleted_at.is_(None),
+        )
 
-    if not await to_thread(verify_password, password, user.hashed_password):
-        raise InvalidCredentialsError("Invalid email or password")
+        user = await self.session.scalar(query)
+        if user is None:
+            await to_thread(verify_password, password, DUMMY_HASH)
+            raise InvalidCredentialsError("Invalid email or password")
 
-    return user
+        if not await to_thread(verify_password, password, user.hashed_password):
+            raise InvalidCredentialsError("Invalid email or password")
+
+        return user

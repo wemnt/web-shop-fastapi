@@ -3,13 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from api.deps import TokenServiceDep
-from db.session import SessionDep
+from api.deps import AuthServiceDep, TokenServiceDep
 from schemas.auth import RefreshRequest, Token
-from services.auth import authenticate_user
-from services.token import (
-    issue_token_pair,
-)
 
 LoginFormDep = Annotated[OAuth2PasswordRequestForm, Depends()]
 
@@ -18,9 +13,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=Token)
-async def login(form: LoginFormDep, session: SessionDep) -> Token:
-    user = await authenticate_user(session, form.username, form.password)
-    return await issue_token_pair(session, user.id)
+async def login(
+    form: LoginFormDep, auth: AuthServiceDep, tokens: TokenServiceDep
+) -> Token:
+    user = await auth.authenticate(form.username, form.password)
+    return await tokens.issue_pair(user.id)
 
 
 @router.post("/refresh", response_model=Token)

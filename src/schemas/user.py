@@ -1,20 +1,25 @@
 from datetime import date, datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, PastDate, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    EmailStr,
+    Field,
+    PastDate,
+    field_validator,
+)
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 from models.user import UserRole
 
+LowerEmail = Annotated[EmailStr, BeforeValidator(str.lower)]
+
 
 class UserCreate(BaseModel):
-    email: EmailStr
-
-    @field_validator("email", mode="before")
-    @classmethod
-    def to_lowercase(cls, v: str | None) -> str | None:
-        return v.lower() if isinstance(v, str) else v
-
+    email: LowerEmail
     name: str = Field(min_length=2, max_length=32)
     date_birth: PastDate | None = None
     mobile_number: PhoneNumber | None = None
@@ -35,13 +40,7 @@ class UserRead(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    email: EmailStr | None = None
-
-    @field_validator("email", mode="before")
-    @classmethod
-    def to_lowercase(cls, v: str | None) -> str | None:
-        return v.lower() if isinstance(v, str) else v
-
+    email: LowerEmail | None = None
     name: str | None = Field(None, min_length=2, max_length=32)
     date_birth: PastDate | None = None
     mobile_number: PhoneNumber | None = None
