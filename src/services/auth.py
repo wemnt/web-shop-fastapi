@@ -21,8 +21,7 @@ class AuthService:
 
         query = select(User).where(
             User.email == email.lower(),
-            User.is_active.is_(True),
-            User.deleted_at.is_(None),
+            User.can_login(),
         )
 
         user = await self.session.scalar(query)

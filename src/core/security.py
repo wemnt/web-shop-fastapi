@@ -30,14 +30,16 @@ def create_access_token(user_id: UUID) -> str:
             "exp": datetime.now(UTC)
             + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         },
-        settings.JWT_SECRET_KEY,
+        settings.JWT_SECRET_KEY.get_secret_value(),
         algorithm=ALGORITHM,
     )
 
 
 def decode_access_token(token: str) -> UUID:
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, settings.JWT_SECRET_KEY.get_secret_value(), algorithms=[ALGORITHM]
+        )
         return UUID(payload["sub"])
     except (jwt.InvalidTokenError, KeyError, ValueError) as e:
         raise AuthTokenError("Invalid token") from e

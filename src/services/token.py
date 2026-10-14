@@ -63,8 +63,7 @@ class TokenService:
 
         query = select(User.id).where(
             User.id == db_token.user_id,
-            User.is_active.is_(True),
-            User.deleted_at.is_(None),
+            User.can_login(),
         )
 
         if await self.session.scalar(query) is None:

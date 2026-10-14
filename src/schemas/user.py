@@ -39,6 +39,11 @@ class UserRead(BaseModel):
     updated_at: datetime
 
 
+class AdminUserRead(UserRead):
+    is_active: bool
+    deleted_at: datetime | None
+
+
 class UserUpdate(BaseModel):
     email: LowerEmail | None = None
     name: str | None = Field(None, min_length=2, max_length=32)

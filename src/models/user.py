@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, String, func, true
+from sqlalchemy import ColumnElement, DateTime, Enum, String, and_, func, true
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.base import Base
@@ -15,6 +15,10 @@ class UserRole(StrEnum):
 
 class User(Base):
     __tablename__ = "users"
+
+    @classmethod
+    def can_login(cls) -> ColumnElement[bool]:
+        return and_(cls.is_active.is_(True), cls.deleted_at.is_(None))
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)

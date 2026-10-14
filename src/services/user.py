@@ -83,7 +83,9 @@ class UserService:
         user.hashed_password = await to_thread(hash_password, data.new_password)
         await self.token.revoke_all(user.id)
 
-    async def change_role(self, user_id: UUID, actor_id: UUID, role: UserRole) -> User:
+    async def change_role(
+        self, *, user_id: UUID, actor_id: UUID, role: UserRole
+    ) -> User:
         if user_id == actor_id:
             raise CannotChangeOwnRoleError("Cannot change your own role")
         user = await self.get(user_id)

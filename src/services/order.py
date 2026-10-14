@@ -159,7 +159,7 @@ class OrderService:
             raise OrderNotFoundError("Order not found")
         return order
 
-    async def change_status(self, order_id: UUID, new_status: OrderStatus) -> Order:
+    async def change_status(self, *, order_id: UUID, new_status: OrderStatus) -> Order:
         order = await self._get_order_for_update(order_id=order_id)
         await self._apply_status(order, new_status)
         return order
