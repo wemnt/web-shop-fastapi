@@ -1,10 +1,8 @@
-from uuid import UUID
-
 from fastapi import APIRouter, status
 
-from api.deps import AdminUserDep, CurrentUserDep, UserServiceDep
+from api.deps import CurrentUserDep, UserServiceDep
 from models.user import User
-from schemas.user import PasswordChange, RoleUpdate, UserCreate, UserRead, UserUpdate
+from schemas.user import PasswordChange, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -46,11 +44,3 @@ async def update_user_password(
     users: UserServiceDep,
 ) -> None:
     await users.change_password(user, data=data)
-
-
-@router.patch("/{user_id}/role", response_model=UserRead)
-async def change_user_role_by_id(
-    user_id: UUID, data: RoleUpdate, users: UserServiceDep, admin: AdminUserDep
-) -> User:
-
-    return await users.change_role(user_id, actor_id=admin.id, role=data.role)

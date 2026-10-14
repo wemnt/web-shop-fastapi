@@ -1,4 +1,5 @@
 from asyncio import to_thread
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -7,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.exceptions import (
+    CannotBlockSelfError,
     CannotChangeOwnRoleError,
     IncorrectPasswordError,
     UserAlreadyExistsError,
@@ -86,4 +88,27 @@ class UserService:
             raise CannotChangeOwnRoleError("Cannot change your own role")
         user = await self.get(user_id)
         user.role = role
+        return user
+
+    async def list_all(self, *, page: int, size: int) -> Sequence[User]:
+        return (
+            await self.session.scalars(
+                select(User)
+                .order_by(User.created_at.desc(), User.id.desc())
+                .limit(size)
+                .offset(page * size)
+            )
+        ).all()
+
+    async def block(self, *, user_id: UUID, actor_id: UUID) -> User:
+        if user_id == actor_id:
+            raise CannotBlockSelfError("User cannot block self")
+        user = await self.get(user_id)
+        user.is_active = False
+        await self.token.revoke_all(user_id)
+        return user
+
+    async def unblock(self, *, user_id: UUID) -> User:
+        user = await self.get(user_id)
+        user.is_active = True
         return user

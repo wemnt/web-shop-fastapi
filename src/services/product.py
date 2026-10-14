@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -45,7 +46,7 @@ class ProductService:
         page: int,
         size: int,
         include_inactive: bool = False,
-    ) -> list[Product]:
+    ) -> Sequence[Product]:
         query = select(Product).where(Product.deleted_at.is_(None))
         if not include_inactive:
             query = query.where(Product.is_active.is_(True))

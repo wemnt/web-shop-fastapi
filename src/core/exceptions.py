@@ -50,6 +50,10 @@ class CannotChangeOwnRoleError(BadRequestError):
     pass
 
 
+class CannotBlockSelfError(BadRequestError):
+    pass
+
+
 class InvalidRefreshTokenError(UnauthorizedError):
     pass
 

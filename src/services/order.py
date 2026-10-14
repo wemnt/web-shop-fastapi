@@ -104,13 +104,14 @@ class OrderService:
             )
         ).all()
 
-    async def get(self, *, user_id: UUID, order_id: UUID) -> Order:
-        order = await self.session.scalar(
-            select(Order)
-            .where(Order.user_id == user_id, Order.id == order_id)
-            .options(selectinload(Order.items))
+    async def get(self, *, user_id: UUID | None = None, order_id: UUID) -> Order:
+        query = (
+            select(Order).where(Order.id == order_id).options(selectinload(Order.items))
         )
+        if user_id is not None:
+            query = query.where(Order.user_id == user_id)
 
+        order = await self.session.scalar(query)
         if order is None:
             raise OrderNotFoundError("Order not found")
 
@@ -171,3 +172,17 @@ class OrderService:
             )
         await self._apply_status(order, OrderStatus.CANCELLED)
         return order
+
+    async def list_all(
+        self, *, status: OrderStatus | None = None, page: int, size: int
+    ) -> Sequence[Order]:
+        query = (
+            select(Order)
+            .order_by(Order.created_at.desc())
+            .options(selectinload(Order.items))
+        )
+        if status is not None:
+            query = query.where(Order.status == status)
+        query = query.limit(size).offset(page * size)
+        result = await self.session.scalars(query)
+        return result.all()
