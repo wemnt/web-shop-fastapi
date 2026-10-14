@@ -1,2 +1,7 @@
 # Exclude the project virtual environment from image builds
 .venv
+.env
+.git
+.ruff_cache
+__pycache__
+.DS_Store

@@ -4,15 +4,15 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.exceptions import ProductNotFoundError
 from models.product import Product
 from schemas.product import ProductCreate, ProductUpdate
-from services.exceptions import ProductNotFoundError
 
 
 async def create_product(session: AsyncSession, data: ProductCreate) -> Product:
     product = Product(**data.model_dump())
     session.add(product)
-    await session.commit()
+    await session.flush()
     return product
 
 
@@ -30,18 +30,16 @@ async def get_product(
 async def update_product(
     session: AsyncSession, product_id: UUID, data: ProductUpdate
 ) -> Product:
-    product = await get_product(session, product_id)
+    product = await get_product(session, product_id, include_inactive=True)
     update_data = data.model_dump(exclude_unset=True, exclude_none=True)
     for key, value in update_data.items():
         setattr(product, key, value)
-    await session.commit()
     return product
 
 
 async def delete_product(session: AsyncSession, product_id: UUID) -> None:
-    product = await get_product(session, product_id)
+    product = await get_product(session, product_id, include_inactive=True)
     product.deleted_at = datetime.now(tz=UTC)
-    await session.commit()
 
 
 async def list_products(

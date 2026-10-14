@@ -9,6 +9,12 @@ from models.user import UserRole
 
 class UserCreate(BaseModel):
     email: EmailStr
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        return v.lower() if isinstance(v, str) else v
+
     name: str = Field(min_length=2, max_length=32)
     date_birth: PastDate | None = None
     mobile_number: PhoneNumber | None = None
@@ -22,7 +28,7 @@ class UserRead(BaseModel):
     email: EmailStr
     name: str
     date_birth: date | None = None
-    role: str
+    role: UserRole
     mobile_number: PhoneNumber | None = None
     created_at: datetime
     updated_at: datetime
@@ -30,6 +36,12 @@ class UserRead(BaseModel):
 
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        return v.lower() if isinstance(v, str) else v
+
     name: str | None = Field(None, min_length=2, max_length=32)
     date_birth: PastDate | None = None
     mobile_number: PhoneNumber | None = None

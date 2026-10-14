@@ -6,9 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from schemas.error import ErrorResponse, FieldError
-from services.exceptions import (
-    AlreadyExistsError,
+from core.exceptions import (
     AppError,
     BadRequestError,
     ConflictError,
@@ -16,10 +14,10 @@ from services.exceptions import (
     NotFoundError,
     UnauthorizedError,
 )
+from schemas.error import ErrorResponse, FieldError
 
 ERROR_STATUS: dict[type[AppError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
-    AlreadyExistsError: status.HTTP_409_CONFLICT,
     ConflictError: status.HTTP_409_CONFLICT,
     BadRequestError: status.HTTP_400_BAD_REQUEST,
     UnauthorizedError: status.HTTP_401_UNAUTHORIZED,
@@ -78,7 +76,7 @@ async def unhandled_error_handler(_request: Request, exc: Exception) -> JSONResp
 
 
 async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
+    _request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
     return error_response(exc.status_code, str(exc.detail), headers=exc.headers)
 

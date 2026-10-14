@@ -7,15 +7,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models import CartItem, Order, OrderItem, Product
-from models.order import OrderStatus
-from services.cart import delete_cart_items
-from services.exceptions import (
+from core.exceptions import (
     EmptyCartError,
     InsufficientStockError,
     InvalidStatusTransitionError,
     OrderNotFoundError,
 )
+from models import CartItem, Order, OrderItem, Product
+from models.order import OrderStatus
+from services.cart import clear_cart
 
 ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     OrderStatus.CREATED: {
@@ -85,8 +85,8 @@ async def create_order(session: AsyncSession, user_id: UUID) -> Order:
 
     order = Order(user_id=user_id, total=total, items=order_items)
     session.add(order)
-    await delete_cart_items(session, user_id)
-    await session.commit()
+    await clear_cart(session, user_id)
+    await session.flush()
     return order
 
 
@@ -166,7 +166,6 @@ async def change_order_status(
 ) -> Order:
     order = await _get_order_for_update(session, order_id)
     await _apply_status(session, order, new_status)
-    await session.commit()
     return order
 
 
@@ -177,5 +176,4 @@ async def cancel_order(session: AsyncSession, user_id: UUID, order_id: UUID) -> 
             f"Order can't be cancelled in status {order.status}"
         )
     await _apply_status(session, order, OrderStatus.CANCELLED)
-    await session.commit()
     return order

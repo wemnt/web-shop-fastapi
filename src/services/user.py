@@ -1,20 +1,20 @@
+from asyncio import to_thread
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_password, verify_password
-from models.user import User, UserRole
-from schemas.user import PasswordChange, UserCreate, UserUpdate
-from services.exceptions import (
+from core.exceptions import (
     CannotChangeOwnRoleError,
     IncorrectPasswordError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from core.security import hash_password, verify_password
+from models.user import User, UserRole
+from schemas.user import PasswordChange, UserCreate, UserUpdate
 from services.token import revoke_all_user_tokens
 
 
@@ -23,15 +23,13 @@ async def create_user(session: AsyncSession, data: UserCreate) -> User:
     if existing is not None:
         raise UserAlreadyExistsError("Email already exists")
 
-    hashed = await run_in_threadpool(hash_password, data.password)
+    hashed = await to_thread(hash_password, data.password)
     user = User(**data.model_dump(exclude={"password"}), hashed_password=hashed)
     session.add(user)
     try:
-        await session.commit()
+        await session.flush()
     except IntegrityError:
-        await session.rollback()
         raise UserAlreadyExistsError("Email already exists") from None
-    await session.refresh(user)
     return user
 
 
@@ -60,9 +58,8 @@ async def update_user(session: AsyncSession, user_id: UUID, data: UserUpdate) ->
         setattr(user, key, value)
 
     try:
-        await session.commit()
+        await session.flush()
     except IntegrityError:
-        await session.rollback()
         raise UserAlreadyExistsError("Email already exists") from None
     return user
 
@@ -71,21 +68,19 @@ async def delete_user(session: AsyncSession, user_id: UUID) -> None:
     user = await get_user(session, user_id)
     user.deleted_at = datetime.now(tz=UTC)
     await revoke_all_user_tokens(session, user.id)
-    await session.commit()
 
 
 async def update_password(
     session: AsyncSession, user_id: UUID, data: PasswordChange
 ) -> None:
     user = await get_user(session, user_id)
-    is_valid = await run_in_threadpool(
+    is_valid = await to_thread(
         verify_password, data.current_password, user.hashed_password
     )
     if not is_valid:
         raise IncorrectPasswordError("Incorrect password")
-    user.hashed_password = await run_in_threadpool(hash_password, data.new_password)
+    user.hashed_password = await to_thread(hash_password, data.new_password)
     await revoke_all_user_tokens(session, user.id)
-    await session.commit()
 
 
 async def change_user_role(
@@ -95,5 +90,4 @@ async def change_user_role(
         raise CannotChangeOwnRoleError("Cannot change your own role")
     user = await get_user(session, user_id)
     user.role = role
-    await session.commit()
     return user

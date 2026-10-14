@@ -6,10 +6,6 @@ class NotFoundError(AppError):
     pass
 
 
-class AlreadyExistsError(AppError):
-    pass
-
-
 class BadRequestError(AppError):
     pass
 
@@ -19,10 +15,6 @@ class UnauthorizedError(AppError):
 
 
 class ConflictError(AppError):
-    pass
-
-
-class UserAlreadyExistsError(AlreadyExistsError):
     pass
 
 
@@ -83,4 +75,12 @@ class OrderNotFoundError(NotFoundError):
 
 
 class InvalidStatusTransitionError(ConflictError):
+    pass
+
+
+class AlreadyExistsError(ConflictError):
+    pass
+
+
+class UserAlreadyExistsError(AlreadyExistsError):
     pass

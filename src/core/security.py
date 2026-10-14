@@ -7,7 +7,7 @@ import jwt
 from pwdlib import PasswordHash
 
 from core.config import settings
-from services.exceptions import AuthTokenError
+from core.exceptions import AuthTokenError
 
 password_hash = PasswordHash.recommended()
 DUMMY_HASH = password_hash.hash("dummy-password-for-timing")

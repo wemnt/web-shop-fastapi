@@ -5,6 +5,9 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.exceptions import (
+    InvalidRefreshTokenError,
+)
 from core.security import (
     create_access_token,
     generate_refresh_token,
@@ -13,9 +16,6 @@ from core.security import (
 from models.refresh_token import RefreshToken
 from models.user import User
 from schemas.auth import Token
-from services.exceptions import (
-    InvalidRefreshTokenError,
-)
 
 
 async def issue_token_pair(session: AsyncSession, user_id: UUID) -> Token:
@@ -29,8 +29,6 @@ async def issue_token_pair(session: AsyncSession, user_id: UUID) -> Token:
     )
 
     session.add(db_token)
-
-    await session.commit()
 
     return Token(
         access_token=create_access_token(user_id),
@@ -60,10 +58,14 @@ async def rotate_refresh_token(session: AsyncSession, raw_token: str) -> Token:
     if db_token.expires_at <= datetime.now(UTC):
         raise InvalidRefreshTokenError("Invalid refresh token")
 
-    query = select(User.id).where(
-        User.id == db_token.user_id,
-        User.is_active.is_(True),
-        User.deleted_at.is_(None),
+    query = (
+        select(User.id)
+        .where(
+            User.id == db_token.user_id,
+            User.is_active.is_(True),
+            User.deleted_at.is_(None),
+        )
+        .with_for_update()
     )
 
     if await session.scalar(query) is None:
@@ -78,7 +80,6 @@ async def revoke_refresh_token(session: AsyncSession, raw_token: str) -> None:
     if db_token is None or db_token.revoked_at is not None:
         return
     db_token.revoked_at = datetime.now(UTC)
-    await session.commit()
 
 
 async def _get_refresh_token(

@@ -5,6 +5,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.exceptions import CartItemNotFoundError, CartQuantityLimitError
 from models import CartItem, Product
 from schemas.cart import (
     MAX_CART_ITEM_QUANTITY,
@@ -13,7 +14,6 @@ from schemas.cart import (
     CartItemUpdate,
     CartRead,
 )
-from services.exceptions import CartItemNotFoundError, CartQuantityLimitError
 from services.product import get_product
 
 
@@ -35,10 +35,8 @@ async def add_item(session: AsyncSession, user_id: UUID, data: CartItemCreate) -
     quantity = (await session.execute(stmt)).scalar_one()
 
     if quantity > MAX_CART_ITEM_QUANTITY:
-        await session.rollback()
         raise CartQuantityLimitError("Too many items in cart")
 
-    await session.commit()
 
 
 async def get_cart(session: AsyncSession, user_id: UUID) -> CartRead:
@@ -87,7 +85,6 @@ async def update_item(
     if cart_item is None:
         raise CartItemNotFoundError("Product not found in cart")
     cart_item.quantity = data.quantity
-    await session.commit()
 
 
 async def remove_item(session: AsyncSession, user_id: UUID, product_id: UUID) -> None:
@@ -96,14 +93,7 @@ async def remove_item(session: AsyncSession, user_id: UUID, product_id: UUID) ->
             CartItem.user_id == user_id, CartItem.product_id == product_id
         )
     )
-    await session.commit()
-
-
-async def delete_cart_items(session: AsyncSession, user_id: UUID) -> None:
-    """Delete all items from the user's cart without committing."""
-    _ = await session.execute(delete(CartItem).where(CartItem.user_id == user_id))
 
 
 async def clear_cart(session: AsyncSession, user_id: UUID) -> None:
-    await delete_cart_items(session, user_id)
-    await session.commit()
+    _ = await session.execute(delete(CartItem).where(CartItem.user_id == user_id))
