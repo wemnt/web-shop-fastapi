@@ -15,6 +15,7 @@ from models.user import User, UserRole
 from services.auth import AuthService
 from services.cart import CartService
 from services.order import OrderService
+from services.outbox import OutboxService
 from services.product import ProductService
 from services.token import TokenService
 from services.user import UserService
@@ -57,8 +58,17 @@ def get_cart_service(session: SessionDep, products: ProductServiceDep) -> CartSe
 CartServiceDep = Annotated[CartService, Depends(get_cart_service)]
 
 
-def get_order_service(session: SessionDep, cart: CartServiceDep) -> OrderService:
-    return OrderService(session, cart)
+def get_outbox_service(session: SessionDep) -> OutboxService:
+    return OutboxService(session)
+
+
+OutboxServiceDep = Annotated[OutboxService, Depends(get_outbox_service)]
+
+
+def get_order_service(
+    session: SessionDep, cart: CartServiceDep, outbox: OutboxServiceDep
+) -> OrderService:
+    return OrderService(session, cart, outbox)
 
 
 OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]

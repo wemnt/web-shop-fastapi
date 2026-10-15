@@ -68,6 +68,16 @@ services:
       timeout: 3s
       retries: 15
 
+  worker:
+    build: .
+    command: uv run faststream run --app-dir src worker.main:app
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
 volumes:
   pgdata:
   nats:
