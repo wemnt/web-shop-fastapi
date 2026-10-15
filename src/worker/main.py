@@ -2,6 +2,7 @@ import asyncio
 
 from faststream import FastStream
 
+import worker.consumers  # noqa: F401
 from events.broker import broker
 from worker.relay import run_relay
 
