@@ -43,7 +43,10 @@ USER_CANCELLABLE = {OrderStatus.CREATED, OrderStatus.READY_FOR_PICKUP}
 
 class OrderService:
     def __init__(
-        self, session: AsyncSession, cart: CartService, outbox: OutboxService
+        self,
+        session: AsyncSession,
+        outbox: OutboxService,
+        cart: CartService | None = None,
     ) -> None:
         self.session = session
         self.cart = cart
@@ -62,6 +65,8 @@ class OrderService:
         )
 
     async def create(self, user_id: UUID) -> Order:
+        if self.cart is None:
+            raise RuntimeError("OrderService.create requires CartService")
         cart_items = (
             await self.session.scalars(
                 select(CartItem)
@@ -213,3 +218,22 @@ class OrderService:
         query = query.limit(size).offset(page * size)
         result = await self.session.scalars(query)
         return result.all()
+
+    async def expire_ready_orders(self, *, older_than: datetime) -> int:
+        query = (
+            select(Order)
+            .where(
+                Order.status == OrderStatus.READY_FOR_PICKUP,
+                Order.ready_at < older_than,
+            )
+            .order_by(Order.ready_at)
+            .limit(100)
+            .options(selectinload(Order.items))
+            .with_for_update(skip_locked=True)
+        )
+        orders = (await self.session.scalars(query)).all()
+
+        for order in orders:
+            await self._apply_status(order, new_status=OrderStatus.CANCELLED)
+            self._emit_cancelled(order, cancelled_by=CancelledBy.SYSTEM, actor_id=None)
+        return len(orders)

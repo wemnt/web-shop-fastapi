@@ -68,7 +68,7 @@ OutboxServiceDep = Annotated[OutboxService, Depends(get_outbox_service)]
 def get_order_service(
     session: SessionDep, cart: CartServiceDep, outbox: OutboxServiceDep
 ) -> OrderService:
-    return OrderService(session, cart, outbox)
+    return OrderService(session, outbox, cart)
 
 
 OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]

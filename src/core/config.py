@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int
     DB_ECHO: bool = False
     NATS_URL: str
+    ORDER_PICKUP_TTL_HOURS: int = 48
 
     @property
     def database_url(self) -> URL:
