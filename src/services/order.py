@@ -13,9 +13,11 @@ from core.exceptions import (
     InvalidStatusTransitionError,
     OrderNotFoundError,
 )
+from events.schemas import CancelledBy, OrderCancelled, OrderCreated
 from models import CartItem, Order, OrderItem, Product
 from models.order import OrderStatus
 from services.cart import CartService
+from services.outbox import OutboxService
 
 ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     OrderStatus.CREATED: {
@@ -40,9 +42,24 @@ USER_CANCELLABLE = {OrderStatus.CREATED, OrderStatus.READY_FOR_PICKUP}
 
 
 class OrderService:
-    def __init__(self, session: AsyncSession, cart: CartService) -> None:
+    def __init__(
+        self, session: AsyncSession, cart: CartService, outbox: OutboxService
+    ) -> None:
         self.session = session
         self.cart = cart
+        self.outbox = outbox
+
+    def _emit_cancelled(
+        self, order: Order, *, cancelled_by: CancelledBy, actor_id: UUID | None
+    ) -> None:
+        self.outbox.add(
+            OrderCancelled(
+                order_id=order.id,
+                user_id=order.user_id,
+                cancelled_by=cancelled_by,
+                actor_id=actor_id,
+            )
+        )
 
     async def create(self, user_id: UUID) -> Order:
         cart_items = (
@@ -92,6 +109,9 @@ class OrderService:
         self.session.add(order)
         await self.cart.clear(user_id)
         await self.session.flush()
+        self.outbox.add(
+            OrderCreated(order_id=order.id, user_id=order.user_id, total=order.total)
+        )
         return order
 
     async def list_for_user(self, user_id: UUID) -> Sequence[Order]:
@@ -159,9 +179,15 @@ class OrderService:
             raise OrderNotFoundError("Order not found")
         return order
 
-    async def change_status(self, *, order_id: UUID, new_status: OrderStatus) -> Order:
+    async def change_status(
+        self, *, order_id: UUID, new_status: OrderStatus, actor_id: UUID
+    ) -> Order:
         order = await self._get_order_for_update(order_id=order_id)
         await self._apply_status(order, new_status)
+        if new_status == OrderStatus.CANCELLED:
+            self._emit_cancelled(
+                order, cancelled_by=CancelledBy.ADMIN, actor_id=actor_id
+            )
         return order
 
     async def cancel(self, *, user_id: UUID, order_id: UUID) -> Order:
@@ -171,6 +197,7 @@ class OrderService:
                 f"Order can't be cancelled in status {order.status}"
             )
         await self._apply_status(order, OrderStatus.CANCELLED)
+        self._emit_cancelled(order, cancelled_by=CancelledBy.CUSTOMER, actor_id=user_id)
         return order
 
     async def list_all(

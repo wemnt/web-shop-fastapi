@@ -28,9 +28,14 @@ router = APIRouter(
     response_model=OrderRead,
 )
 async def order_change_status(
-    orders: OrderServiceDep, order_id: UUID, data: OrderStatusUpdate
+    orders: OrderServiceDep,
+    order_id: UUID,
+    data: OrderStatusUpdate,
+    admin: CurrentUserDep,
 ) -> Order:
-    return await orders.change_status(order_id=order_id, new_status=data.status)
+    return await orders.change_status(
+        order_id=order_id, new_status=data.status, actor_id=admin.id
+    )
 
 
 @router.patch("/users/{user_id}/role", response_model=AdminUserRead)

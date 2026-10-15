@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
     DB_ECHO: bool = False
+    NATS_URL: str
 
     @property
     def database_url(self) -> URL:

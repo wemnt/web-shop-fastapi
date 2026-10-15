@@ -6,12 +6,14 @@ from api.errors import register_exception_handlers
 from api.v1.router import api_router
 from core.config import settings
 from db.session import engine
+from events.broker import broker
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    await broker.start()
     yield
+    await broker.stop()
     await engine.dispose()
 
 
