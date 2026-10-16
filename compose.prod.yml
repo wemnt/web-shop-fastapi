@@ -1,0 +1,71 @@
+services:
+  web:
+    build: .
+    command:
+      - fastapi
+      - run
+      - src/app.py
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "2"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      default:
+      proxy:
+        aliases:
+          - webshop-api
+
+  worker:
+    build: .
+    command: faststream run --app-dir src worker.main:app
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+  db:
+    image: postgres:18
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  nats:
+    image: nats:2.11-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    restart: unless-stopped
+    volumes:
+      - nats:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  pgdata:
+  nats:
