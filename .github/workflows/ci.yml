@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ???
+          POSTGRES_PASSWORD: ???
+          POSTGRES_DB: webshop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: webshop_test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      JWT_SECRET_KEY: test-secret
+      ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+      REFRESH_TOKEN_EXPIRE_DAYS: "7"
+      NATS_URL: nats://localhost:4222
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run pytest -v
