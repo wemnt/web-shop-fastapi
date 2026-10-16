@@ -21,6 +21,7 @@ services:
       - ./migrations:/app/migrations
       - ./alembic.ini:/app/alembic.ini
       - ./tests:/app/tests
+      - uv-cache:/root/.cache/uv
 
     # Host the FastAPI application on port 8000
     ports:
@@ -82,3 +83,4 @@ services:
 volumes:
   pgdata:
   nats:
+  uv-cache:
