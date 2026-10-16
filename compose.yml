@@ -20,6 +20,7 @@ services:
     volumes:
       - ./migrations:/app/migrations
       - ./alembic.ini:/app/alembic.ini
+      - ./tests:/app/tests
 
     # Host the FastAPI application on port 8000
     ports:
