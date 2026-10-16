@@ -1,4 +1,6 @@
 from collections.abc import AsyncIterator
+from decimal import Decimal
+from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -10,11 +12,14 @@ from core.config import settings
 from core.security import create_access_token
 from db.base import Base
 from db.session import get_session
+from models.product import Product
 from models.user import User, UserRole
+from schemas.product import ProductCreate
 from schemas.user import UserCreate
+from services.product import ProductService
 from services.token import TokenService
 from services.user import UserService
-from tests.typedefs import AuthHeaders, CreateUser
+from tests.typedefs import AuthHeaders, CreateOrder, CreateProduct, CreateUser
 
 TEST_DATABASE_URL = settings.database_url.set(database="webshop_test")
 
@@ -91,3 +96,47 @@ def auth_headers() -> AuthHeaders:
         return {"Authorization": f"Bearer {token}"}
 
     return _headers
+
+
+@pytest.fixture
+def create_product(session: AsyncSession) -> CreateProduct:
+    async def _create(
+        *,
+        name: str = "Test product",
+        description: str = "Test description",
+        price: Decimal = Decimal("100.00"),
+        stock: int = 10,
+    ) -> Product:
+        products = ProductService(session)
+        return await products.create(
+            data=ProductCreate(
+                name=name,
+                description=description,
+                price=price,
+                stock=stock,
+            )
+        )
+
+    return _create
+
+
+@pytest.fixture
+def create_order(client: AsyncClient, auth_headers: AuthHeaders) -> CreateOrder:
+    async def _create(
+        user: User, product: Product, quantity: int = 1
+    ) -> dict[str, Any]:
+        headers = auth_headers(user)
+
+        response = await client.post(
+            "/api/v1/cart/items",
+            json={"product_id": str(product.id), "quantity": quantity},
+            headers=headers,
+        )
+        assert response.status_code in (200, 201), response.text
+
+        response = await client.post("/api/v1/orders", headers=headers)
+        assert response.status_code == 201, response.text
+
+        return response.json()
+
+    return _create
