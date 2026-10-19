@@ -3,12 +3,14 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from fakeredis import FakeAsyncRedis
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 import models  # noqa: F401
 from app import app
 from core.config import settings
+from core.redis import get_redis
 from core.security import create_access_token
 from db.base import Base
 from db.session import get_session
@@ -51,6 +53,11 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 @pytest.fixture
 async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
 
+    fake_redis = FakeAsyncRedis(decode_responses=True)
+
+    async def override_get_redis() -> FakeAsyncRedis:
+        return fake_redis
+
     async def override_get_session() -> AsyncIterator[AsyncSession]:
         try:
             yield session
@@ -61,6 +68,7 @@ async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
             await session.commit()
 
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_redis] = override_get_redis
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:

@@ -72,3 +72,14 @@ async def test_admin_cannot_block_self(
     )
 
     assert response.status_code == 400
+
+
+async def test_login_rate_limit(client: AsyncClient) -> None:
+    form = {"username": "nobody@test.com", "password": "wrong-password"}
+
+    for _ in range(5):
+        response = await client.post("/api/v1/auth/login", data=form)
+        assert response.status_code == 401
+
+    response = await client.post("/api/v1/auth/login", data=form)
+    assert response.status_code == 429
