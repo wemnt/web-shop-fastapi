@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from api.deps import AuthServiceDep, TokenServiceDep
+from api.deps import AuthServiceDep, TokenServiceDep, rate_limit_login
 from schemas.auth import RefreshRequest, Token
 
 LoginFormDep = Annotated[OAuth2PasswordRequestForm, Depends()]
@@ -12,7 +12,7 @@ LoginFormDep = Annotated[OAuth2PasswordRequestForm, Depends()]
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[Depends(rate_limit_login)])
 async def login(
     form: LoginFormDep, auth: AuthServiceDep, tokens: TokenServiceDep
 ) -> Token:

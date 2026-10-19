@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from api.errors import register_exception_handlers
 from api.v1.router import api_router
 from core.config import settings
+from core.redis import redis_client
 from db.session import engine
 from events.broker import broker
 
@@ -15,6 +16,7 @@ async def lifespan(app: FastAPI):
     yield
     await broker.stop()
     await engine.dispose()
+    await redis_client.aclose()
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

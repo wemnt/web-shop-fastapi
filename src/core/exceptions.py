@@ -18,6 +18,10 @@ class ConflictError(AppError):
     pass
 
 
+class TooManyRequestsError(AppError):
+    pass
+
+
 class UserNotFoundError(NotFoundError):
     pass
 
@@ -91,4 +95,8 @@ class UserAlreadyExistsError(AlreadyExistsError):
 
 
 class InactiveUserError(ForbiddenError):
+    pass
+
+
+class LoginRateLimitError(TooManyRequestsError):
     pass

@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     DB_ECHO: bool = False
     NATS_URL: str
     ORDER_PICKUP_TTL_HOURS: int = 48
+    REDIS_URL: str
+    LOGIN_RATE_LIMIT: int = 5
+    LOGIN_RATE_WINDOW_SECONDS: int = 60
 
     @property
     def database_url(self) -> URL:

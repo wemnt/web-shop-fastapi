@@ -40,6 +40,7 @@ jobs:
       ACCESS_TOKEN_EXPIRE_MINUTES: "15"
       REFRESH_TOKEN_EXPIRE_DAYS: "7"
       NATS_URL: nats://localhost:4222
+      REDIS_URL: redis://localhost:6379/0
 
     steps:
       - uses: actions/checkout@v4

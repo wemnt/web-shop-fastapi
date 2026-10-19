@@ -12,6 +12,7 @@ from core.exceptions import (
     ConflictError,
     ForbiddenError,
     NotFoundError,
+    TooManyRequestsError,
     UnauthorizedError,
 )
 from schemas.error import ErrorResponse, FieldError
@@ -22,6 +23,7 @@ ERROR_STATUS: dict[type[AppError], int] = {
     BadRequestError: status.HTTP_400_BAD_REQUEST,
     UnauthorizedError: status.HTTP_401_UNAUTHORIZED,
     ForbiddenError: status.HTTP_403_FORBIDDEN,
+    TooManyRequestsError: status.HTTP_429_TOO_MANY_REQUESTS,
 }
 
 logger = logging.getLogger(__name__)

@@ -21,6 +21,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       default:
       proxy:
@@ -37,6 +39,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
   db:
     image: postgres:18
@@ -49,6 +53,15 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
 
   nats:
     image: nats:2.11-alpine

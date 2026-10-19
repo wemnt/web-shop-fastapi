@@ -1,14 +1,18 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
+from redis.asyncio import Redis
 
+from core.config import settings
 from core.exceptions import (
     AuthTokenError,
     InactiveUserError,
     InsufficientRoleError,
+    LoginRateLimitError,
     UserNotFoundError,
 )
+from core.redis import get_redis
 from core.security import decode_access_token
 from db.session import SessionDep
 from models.user import User, UserRole
@@ -101,3 +105,18 @@ def require_roles(*roles: UserRole):
 
 require_admin = require_roles(UserRole.ADMIN)
 AdminUserDep = Annotated[User, Depends(require_admin)]
+
+
+async def rate_limit_login(
+    request: Request,
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> None:
+    ip = request.client.host if request.client is not None else "unknown"
+    key = f"ratelimit:login:{ip}"
+
+    count = await redis.incr(key)
+    if count == 1:
+        await redis.expire(key, settings.LOGIN_RATE_WINDOW_SECONDS)
+
+    if count > settings.LOGIN_RATE_LIMIT:
+        raise LoginRateLimitError("Too many login attempts, try again later")
